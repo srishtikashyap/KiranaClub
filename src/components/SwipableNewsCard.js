@@ -29,15 +29,13 @@ const formatTime = (dateString) => {
 
   const handlePin = (item) => {
     onPin(item);
-    swipeListViewRef.current?.safeCloseOpenRow(); // Close the row after pinning
+    swipeListViewRef.current?.safeCloseOpenRow(); 
   };
 
   const handleDelete = (item) => {
     onDelete(item);
-    swipeListViewRef.current?.safeCloseOpenRow(); // Close the row after deleting
+    swipeListViewRef.current?.safeCloseOpenRow(); 
   };
-
-  const formattedTime = formatTime('2024-08-31T08:00:34Z');
 
   const renderItem = (data) => (
     <TouchableOpacity onPress={() => swipeListViewRef.current?.safeCloseOpenRow()} activeOpacity={1} style={{ flex: 1 }}>

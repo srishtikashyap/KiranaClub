@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, Image, TouchableOpacity, Text,ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, StyleSheet, FlatList, Image, TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { fetchHeadlines, getStoredHeadlines } from '../utils/newsService';
 import SwipeableNewsCard from '../components/SwipableNewsCard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const NewsList = () => {
   const [headlines, setHeadlines] = useState([]);
   const [batchSize, setBatchSize] = useState(10);
   const [loading, setLoading] = useState(false);
   const [pinnedItem, setPinnedItem] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(0); // Keep track of the current index
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     const loadHeadlines = async () => {
@@ -27,21 +29,57 @@ const NewsList = () => {
     loadHeadlines();
   }, [batchSize]);
 
-  const loadMoreHeadlines = async () => {
-    if (!loading) {
+  const loadMoreHeadlines = useCallback(async () => {
+    if (!loading && hasMore) {
       setLoading(true);
       try {
         const storedHeadlines = await getStoredHeadlines();
-        const newBatchSize = batchSize + 10;
+        const newBatchSize = batchSize + 10; 
         setBatchSize(newBatchSize);
-        setHeadlines(storedHeadlines.slice(0, newBatchSize));
+        const newHeadlines = storedHeadlines.slice(0, newBatchSize);
+  
+        if (newHeadlines.length > headlines.length) {
+          setHeadlines(newHeadlines);
+          setCurrentIndex(newBatchSize);
+        } else {
+          setHasMore(false);
+        }
       } catch (error) {
         console.error('Error loading more headlines:', error);
       } finally {
         setLoading(false);
       }
     }
+  }, [batchSize, headlines.length, loading, hasMore]);
+
+
+  const handleRefresh = async () => {
+    if (!loading) {
+      setLoading(true);
+      try {
+        const storedHeadlines = await getStoredHeadlines();
+        const fetchedHeadlines = await fetchHeadlines();
+        const newIndex = currentIndex + 100;
+        let combinedHeadlines = [...storedHeadlines, ...fetchedHeadlines];
+        if (pinnedItem) {
+          combinedHeadlines = combinedHeadlines.filter((headline) => headline.title !== pinnedItem.title);
+          combinedHeadlines.unshift(pinnedItem);
+        }
+  
+        setHeadlines(combinedHeadlines.slice(0, batchSize)); 
+  
+        await AsyncStorage.setItem('headlines', JSON.stringify(combinedHeadlines));
+        setCurrentIndex(newIndex);
+        setHasMore(fetchedHeadlines.length > 0);
+      } catch (error) {
+        console.error('Error refreshing headlines:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
+  
+  
 
   const handleDelete = (item) => {
     setHeadlines(headlines.filter((headline) => headline.title !== item.title));
@@ -51,29 +89,6 @@ const NewsList = () => {
     setPinnedItem(item);
     setHeadlines([item, ...headlines.filter((headline) => headline.title !== item.title)]);
   };
-
-  const handleRefresh = async () => {
-    if (!loading) {
-      setLoading(true);
-      try {
-        const storedHeadlines = await getStoredHeadlines();
-        const newIndex = currentIndex + 100; // Update index to fetch the next 100 headlines
-        setCurrentIndex(newIndex);
-        const fetchedHeadlines = storedHeadlines.slice(newIndex, newIndex + 100);
-        if (fetchedHeadlines.length > 0) {
-          setHeadlines(fetchedHeadlines);
-          setBatchSize(newIndex + 100); // Update batch size to reflect new data
-        } else {
-          console.log('No more headlines to fetch.');
-        }
-      } catch (error) {
-        console.error('Error refreshing headlines:', error);
-      } finally {
-        setLoading(false);
-        
-      }
-    }
-  }; 
 
   const ItemSeparatorComponent = () => (
     <View style={styles.separator} />
@@ -90,14 +105,14 @@ const NewsList = () => {
       <View style={styles.separator} />
       {headlines.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No headlines available</Text>
+          <ActivityIndicator size="large" color="#0000ff" />
         </View>
       ) : (
         <FlatList
           showsVerticalScrollIndicator={false}
           data={headlines}
           keyExtractor={(item, index) => index.toString()}
-          windowSize={15}
+          // windowSize={15}
           renderItem={({ item }) => (
             <SwipeableNewsCard
               data={[item]}
@@ -106,8 +121,9 @@ const NewsList = () => {
             />
           )}
           onEndReached={loadMoreHeadlines}
-          onEndReachedThreshold={0.5}
+          onEndReachedThreshold={0.2}
           ItemSeparatorComponent={ItemSeparatorComponent}
+          // ListFooterComponent={loading ? <ActivityIndicator size="large" color="#0000ff" /> : null}
         />
       )}
     </View>
@@ -141,3 +157,4 @@ const styles = StyleSheet.create({
 });
 
 export default NewsList;
+
