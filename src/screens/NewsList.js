@@ -11,6 +11,7 @@ const NewsList = () => {
   const [pinnedItem, setPinnedItem] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [page,setPage] = useState(1)
 
   useEffect(() => {
     const loadHeadlines = async () => {
@@ -20,6 +21,7 @@ const NewsList = () => {
           setHeadlines(storedHeadlines.slice(0, batchSize));
         } else {
           const fetchedHeadlines = await fetchHeadlines();
+          setPage(prev => prev+1)
           setHeadlines(fetchedHeadlines.slice(0, batchSize));
         }
       } catch (error) {
@@ -43,6 +45,10 @@ const NewsList = () => {
           setCurrentIndex(newBatchSize);
         } else {
           setHasMore(false);
+          const fetchedHeadlines = await fetchHeadlines(page)
+          let combinedHeadlines = [...storedHeadlines, ...fetchedHeadlines];
+          await AsyncStorage.setItem('headlines', JSON.stringify(combinedHeadlines));
+          setPage(prev => prev + 1)
         }
       } catch (error) {
         console.error('Error loading more headlines:', error);
@@ -58,7 +64,8 @@ const NewsList = () => {
       setLoading(true);
       try {
         const storedHeadlines = await getStoredHeadlines();
-        const fetchedHeadlines = await fetchHeadlines();
+        const fetchedHeadlines = await fetchHeadlines(page);
+        setPage(prev => prev + 1)
         const newIndex = currentIndex + 100;
         let combinedHeadlines = [...storedHeadlines, ...fetchedHeadlines];
         if (pinnedItem) {
@@ -121,7 +128,7 @@ const NewsList = () => {
             />
           )}
           onEndReached={loadMoreHeadlines}
-          onEndReachedThreshold={0.2}
+          onEndReachedThreshold={0.8}
           ItemSeparatorComponent={ItemSeparatorComponent}
           // ListFooterComponent={loading ? <ActivityIndicator size="large" color="#0000ff" /> : null}
         />

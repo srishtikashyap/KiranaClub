@@ -2,16 +2,16 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_KEY = '6d18ba5a45664082a979c9a681fe151f';
-const API_URL = `https://newsapi.org/v2/everything?q=tesla&from=2024-08-03&sortBy=publishedAt&apiKey=${API_KEY}`;
+const API_URL = `https://newsapi.org/v2/everything?q=tesla&sortBy=publishedAt&apiKey=${API_KEY}`;
 
-export const fetchHeadlines = async () => {
+export const fetchHeadlines = async (page) => {
   try {
-    const response = await axios.get(API_URL);
+    const response = await axios.get(`https://newsapi.org/v2/everything?q=tesla&sortBy=publishedAt&apiKey=${API_KEY}&page=${page}`);
     const headlines = response.data.articles;
     await AsyncStorage.setItem('headlines', JSON.stringify(headlines));
     return headlines;
   } catch (error) {
-    console.error(error);
+    console.log(error.response.data);
     return [];
   }
 };
