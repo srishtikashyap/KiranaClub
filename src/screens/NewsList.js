@@ -70,6 +70,7 @@ const NewsList = () => {
         console.error('Error refreshing headlines:', error);
       } finally {
         setLoading(false);
+        
       }
     }
   }; 
