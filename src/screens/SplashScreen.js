@@ -13,8 +13,8 @@ const SplashScreen = ({ navigation }) => {
     <View style={styles.container}>
       <Image source={require('../images/splash.png')} style={styles.logo} resizeMode="contain" />
     </View>
-  );
-};
+  ); 
+}; 
 
 const styles = StyleSheet.create({
   container: {

@@ -72,7 +72,7 @@ const NewsList = () => {
         setLoading(false);
       }
     }
-  };
+  }; 
 
   const ItemSeparatorComponent = () => (
     <View style={styles.separator} />

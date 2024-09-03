@@ -119,7 +119,7 @@ const formatTime = (dateString) => {
 export default React.memo(SwipeableNewsCard)
 
 const styles = StyleSheet.create({
-  rowFront: {
+  rowFront: { 
     backgroundColor: 'white',
     marginVertical: 5,
     padding: 15,
